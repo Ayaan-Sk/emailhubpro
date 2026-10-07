@@ -5,7 +5,14 @@ import {
   BrandConfig,
   HistoryRecord,
 } from './types';
-import { initAuth, googleSignIn, logout, setAccessToken, getAccessToken } from './services/auth';
+import {
+  initAuth,
+  googleSignIn,
+  googleSignInRedirect,
+  logout,
+  setAccessToken,
+  getAccessToken,
+} from './services/auth';
 import {
   sendGmailEmail,
   scheduleGmailEmail,
@@ -21,6 +28,7 @@ import { BrandModal } from './components/BrandModal';
 import { ConfirmSendModal } from './components/ConfirmSendModal';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { LoginPage } from './components/LoginPage';
+import { UnauthorizedDomainModal } from './components/UnauthorizedDomainModal';
 import {
   CheckCircle,
   AlertCircle,
@@ -141,6 +149,8 @@ export default function App() {
   const [isConfirmSendOpen, setIsConfirmSendOpen] = useState(false);
   const [initialScheduleMode, setInitialScheduleMode] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isUnauthorizedDomainOpen, setIsUnauthorizedDomainOpen] = useState(false);
+  const [oauthHelperTab, setOauthHelperTab] = useState<'test-users' | 'domain'>('test-users');
 
   // History state
   const [history, setHistory] = useState<HistoryRecord[]>(() => {
@@ -226,7 +236,32 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Sign in failed:', err);
-      showToast('error', err?.message || 'Failed to sign in with Google.');
+      const errCode = err?.code || '';
+      const errMsg = err?.message || '';
+      if (
+        errCode === 'auth/unauthorized-domain' ||
+        errMsg.includes('auth/unauthorized-domain')
+      ) {
+        setOauthHelperTab('domain');
+        setIsUnauthorizedDomainOpen(true);
+        showToast(
+          'error',
+          `Add "${window.location.hostname}" to Authorized Domains in Firebase Console to enable Google Sign-In.`
+        );
+      } else if (
+        errCode === 'auth/popup-closed-by-user' ||
+        errMsg.includes('access_denied') ||
+        errMsg.includes('403')
+      ) {
+        setOauthHelperTab('test-users');
+        setIsUnauthorizedDomainOpen(true);
+        showToast(
+          'error',
+          'If you saw "Error 403: access_denied", add your email under Test Users in Google Cloud Console.'
+        );
+      } else {
+        showToast('error', errMsg || 'Failed to sign in with Google.');
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -674,6 +709,19 @@ export default function App() {
         }}
         onCancelSchedule={handleCancelSchedule}
         onSendScheduledNow={handleSendScheduledNow}
+      />
+
+      {/* Unauthorized Domain & Test Users Setup Helper Modal */}
+      <UnauthorizedDomainModal
+        isOpen={isUnauthorizedDomainOpen}
+        onClose={() => setIsUnauthorizedDomainOpen(false)}
+        onRetrySignIn={handleLogin}
+        onRedirectSignIn={() => {
+          googleSignInRedirect().catch((err) => {
+            showToast('error', err?.message || 'Failed to start redirect sign-in.');
+          });
+        }}
+        initialTab={oauthHelperTab}
       />
     </div>
   );
