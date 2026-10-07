@@ -1,0 +1,6 @@
+{
+  "name": "AI Executive Email Drafter & Dispatcher",
+  "description": "Generate polished, professional branded emails with AI, add custom logos and attachments, and dispatch or draft directly via Gmail.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
