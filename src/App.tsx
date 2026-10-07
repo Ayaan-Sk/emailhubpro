@@ -641,8 +641,19 @@ export default function App() {
               onChangeSubject={(sub) =>
                 setEmailData((prev) => ({ ...prev, subject: sub }))
               }
-              onChangeBodyText={(txt) =>
-                setEmailData((prev) => ({ ...prev, bodyText: txt }))
+              onChangeBodyText={(txt, syncedHtml) =>
+                setEmailData((prev) => ({
+                  ...prev,
+                  bodyText: txt,
+                  bodyHtml: syncedHtml !== undefined ? syncedHtml : prev.bodyHtml,
+                }))
+              }
+              onChangeBodyHtml={(html, syncedText) =>
+                setEmailData((prev) => ({
+                  ...prev,
+                  bodyHtml: html,
+                  bodyText: syncedText !== undefined ? syncedText : prev.bodyText,
+                }))
               }
               onSendViaGmail={() => {
                 setInitialScheduleMode(false);
